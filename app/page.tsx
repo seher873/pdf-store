@@ -4,16 +4,20 @@ import Link from "next/link";
 import { initialProducts, getColorForCategory } from "@/data/products";
 import type { Product } from "@/data/products";
 
+function normalizeSearchText(value: string) {
+  return value.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
 export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const products = initialProducts;
+  const searchTerms = normalizeSearchText(searchQuery).split(" ").filter(Boolean);
 
   const filteredProducts = products.filter((product: Product) => {
     const matchesCategory = selectedCategory === "All" || product.category === selectedCategory;
-    const matchesSearch =
-      product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const searchableText = normalizeSearchText(`${product.title} ${product.description}`);
+    const matchesSearch = searchTerms.every((term) => searchableText.includes(term));
     return matchesCategory && matchesSearch;
   });
 
@@ -78,7 +82,11 @@ export default function Home() {
           ))}
         </div>
         {filteredProducts.length === 0 ? (
-          <p className="mt-12 text-center text-slate-600">No products found.</p>
+          <p className="mt-12 text-center text-slate-600">
+            {searchQuery.trim()
+              ? "No products match your search. Try a different keyword or category."
+              : "No products found."}
+          </p>
         ) : (
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {filteredProducts.map((product: Product) => (

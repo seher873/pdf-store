@@ -1,71 +1,16 @@
 ﻿"use client";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState, Suspense } from "react";
-import { getWhatsAppUrl } from "@/data/products";
-import { getSupabaseClient } from "@/lib/supabase";
-import type { Product } from "@/types/product";
-import { getColorForCategory } from "@/types/product";
+import { Suspense } from "react";
+import { getWhatsAppUrl, initialProducts, getColorForCategory } from "@/data/products";
+import type { Product } from "@/data/products";
 
 function ProductDetailsPageInner() {
   const params = useParams<{ id: string }>();
   const id = Number(params?.id);
-  const [product, setProduct] = useState<Product | null | undefined>(undefined);
-  const [error, setError] = useState<string>("");
-
-  useEffect(() => {
-    async function loadProduct() {
-      const supabase = getSupabaseClient();
-      if (!supabase) {
-        setError("Supabase not configured.");
-        setProduct(null);
-        return;
-      }
-      if (Number.isNaN(id)) {
-        setProduct(null);
-        return;
-      }
-      try {
-        const { data, error: dbError } = await supabase
-          .from("products")
-          .select("*")
-          .eq("id", id)
-          .single();
-        if (dbError) {
-          setProduct(null);
-          return;
-        }
-        if (!data) {
-          setProduct(null);
-          return;
-        }
-        setProduct({ ...(data as Product), price: Number((data as Product).price), color: (data as Product).color || getColorForCategory((data as Product).category) });
-      } catch {
-        setProduct(null);
-      }
-    }
-    loadProduct();
-  }, [id]);
-
-  if (product === undefined) {
-    return (
-      <main className="min-h-screen bg-white text-slate-800">
-        <header className="border-b border-slate-100">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-5">
-            <Link href="/" className="text-xl font-bold tracking-tight text-indigo-700">
-              PDF<span className="text-slate-800">Store.</span>
-            </Link>
-          </div>
-        </header>
-        <section className="mx-auto max-w-3xl px-6 py-16 text-center">
-          <p className="text-slate-600">Loading product...</p>
-        </section>
-        <footer className="border-t border-slate-200 px-6 py-7 text-center text-sm text-slate-500">
-          Copyright PDFStore. All rights reserved.
-        </footer>
-      </main>
-    );
-  }
+  const product = Number.isNaN(id)
+    ? null
+    : initialProducts.find((item) => item.id === id) ?? null;
 
   if (!product) {
     return (
@@ -80,7 +25,7 @@ function ProductDetailsPageInner() {
         <section className="mx-auto max-w-3xl px-6 py-16 text-center">
           <h1 className="text-3xl font-bold">Product Not Found</h1>
           <p className="mt-4 text-slate-600">
-            {error || "We could not find a product with this ID. Please check the URL or go back to browse all products."}
+            We could not find a product with this ID. Please check the URL or go back to browse all products.
           </p>
           <div className="mt-8">
             <Link href="/" className="inline-flex rounded-xl bg-indigo-700 px-6 py-3 font-semibold text-white transition hover:bg-indigo-800">
