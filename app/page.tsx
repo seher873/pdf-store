@@ -1,49 +1,13 @@
 ﻿"use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { getSupabaseClient } from "@/lib/supabase";
-import type { Product } from "@/types/product";
-import { getColorForCategory } from "@/types/product";
+import { initialProducts, getColorForCategory } from "@/data/products";
+import type { Product } from "@/data/products";
 
 export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>("");
-
-  useEffect(() => {
-    async function loadProducts() {
-      const supabase = getSupabaseClient();
-      if (!supabase) {
-        setError("Supabase not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local.");
-        setLoading(false);
-        return;
-      }
-      try {
-      const { data, error: dbError } = await supabase
-        .from("products")
-        .select("*")
-        .order("id", { ascending: true });
-      if (dbError) {
-        setError(dbError.message);
-        setLoading(false);
-        return;
-      }
-      const mapped = (data || []).map((p) => ({
-        ...(p as Product),
-        price: Number((p as Product).price),
-        color: (p as Product).color || getColorForCategory((p as Product).category),
-      }));
-      setProducts(mapped);
-    } catch (e) {
-      setError((e as Error)?.message || "Failed to load products");
-    } finally {
-        setLoading(false);
-      }
-    }
-    loadProducts();
-  }, []);
+  const products = initialProducts;
 
   const filteredProducts = products.filter((product: Product) => {
     const matchesCategory = selectedCategory === "All" || product.category === selectedCategory;
@@ -113,10 +77,7 @@ export default function Home() {
             <button key={category} onClick={() => setSelectedCategory(category)} className={selectedCategory === category ? "rounded-full px-5 py-2.5 text-sm font-semibold transition bg-indigo-700 text-white" : "rounded-full px-5 py-2.5 text-sm font-semibold transition border border-slate-200 bg-white text-slate-700 hover:bg-indigo-50"}>{category}</button>
           ))}
         </div>
-        {error && <p className="text-center text-sm text-red-600">{error}</p>}
-        {loading ? (
-          <p className="mt-12 text-center text-slate-600">Loading products...</p>
-        ) : filteredProducts.length === 0 ? (
+        {filteredProducts.length === 0 ? (
           <p className="mt-12 text-center text-slate-600">No products found.</p>
         ) : (
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
